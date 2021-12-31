@@ -1,0 +1,21 @@
+%% Calculo del sistema compensador
+Zmin = Z;
+Pmin = P;
+% Calculo los polos y ceros de la componente de fase minima del sistema compensador
+z0 = Z(abs(Z)>1); % extraigo los ceros fuera de circulo unidad, en este caso solo 1
+zrc = 1/conj(z0); 
+Zmin(Zmin == z0) = [];
+Zmin(length(Zmin)+1) = zrc; 
+%tras obtener el reciproco conjugado de z0, elimino z0 del diagrama y añado zrc, haciendo que no haya ningun cer fuera del 
+%circulo unidad
+
+%calculo de la componente paso todo
+Zap = z0;   %los ceros son los que he eliminado en el Hmin
+Pap = zrc;  %los polos son los reciprocos conjugados
+Kap = (1+z0)/(1+zrc); %|Hap(z)|=1 => Hap(1)=1 de donde se obtiene su ganancia
+Kmin = 1/Kap;
+
+%calculo final del sistema compensador
+[Bmin, Amin] = zp2tf(Zmin, Pmin, Kmin);
+fig('Diagrama de polos y ceros');
+zplane(Bmin, Amin);
