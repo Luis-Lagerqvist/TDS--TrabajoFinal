@@ -16,6 +16,94 @@ Kap = (1+z0)/(1+zrc); %|Hap(z)|=1 => Hap(1)=1 de donde se obtiene su ganancia
 Kmin = 1/Kap;
 
 %calculo final del sistema compensador
-[Bmin, Amin] = zp2tf(Zmin, Pmin, Kmin);
+[Bhc, Ahc] = zp2tf(Pmin, Zmin, Kmin);
+
+[Hc, w] = freqz(Bhc, Ahc, 4096);
+mHc = 20*log10(abs(Hc));
+plot(w, mHc);
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
 fig('Diagrama de polos y ceros');
-zplane(Bmin, Amin);
+zplane(Bhc, Ahc);
+
+%----------------------------------------------------------------------------------------------
+
+%%
+% diseño de los filtros del compensador
+subplot(2,3,1);
+plot(w, mHc);
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+
+% -----   peak filter   -----
+[Bp,Ap] = peakfilter(-2,16e3, 0.4);
+[Hp, w] = freqz(Bp, Ap, 4096);
+mHp = 20*log10(abs(Hp));
+subplot(2,3,4);
+plot(w, mHp);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp)-1, max(mHp)+1]);
+
+% -----   peak filter1   -----
+[Bp1,Ap1] = peakfilter(-0.9,13.75e3, 0.4);
+[Hp1, w] = freqz(Bp1, Ap1, 4096);
+mHp1 = 20*log10(abs(Hp1));
+subplot(2,3,5);
+plot(w, mHp1);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp1)-1, max(mHp1)+1]);
+
+% -----   peak filter2   -----
+[Bp2,Ap2] = peakfilter(-0.9,18.5e3, 0.4);
+[Hp2, w] = freqz(Bp2, Ap2, 4096);
+mHp2 = 20*log10(abs(Hp2));
+subplot(2,3,6);
+plot(w, mHp2);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp2)-1, max(mHp2)+1]);
+         
+% -----  low-shelf filter   -----
+[Bls,Als] = lowshelf(-6,4600, 1);
+[Hls, w] = freqz(Bls, Als, 4096);
+mHls = 20*log10(abs(Hls));
+subplot(2,3,2);
+plot(w, mHls);
+title('modulo de la respuesta en frecuencia del low-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHls)-1, max(mHls)+1]);
+
+% -----   high-shelf filter   -----
+[Bhs,Ahs] = highself(13, 22900, 0.5);
+[Hhs, w] = freqz(Bhs, Ahs, 4096);
+mHhs = 20*log10(abs(Hhs));
+subplot(2,3,3);
+plot(w, mHhs);
+title('modulo de la respuesta en frecuencia del high-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHhs)-1, max(mHhs)+1]);
+
+%-------------------------------------------------------------------------------------------------------------------
+
+%%
+%prueba de los filtros en cascada
+subplot(2,1,1);
+plot(w, mHc);
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+% sistema compensador 
+Hct = Hls.*Hhs.*Hp.*Hp1.*Hp2;
+mHct = 20*log10(abs(Hct));
+subplot(2,1,2);
+plot(w, mHct);
+title('modulo de la respuesta en frecuencia del compensador real');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHct)-1, max(mHct)+1]);
+
+
+
