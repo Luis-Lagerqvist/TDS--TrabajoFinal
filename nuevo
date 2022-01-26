@@ -1,0 +1,138 @@
+% TDS�-G33
+% Laboratorio: Trabajo final
+%
+% alumno1: mirella.adazo@alumnos.upm.es      
+% alumno2: luis.lagerqvista@alumnos.upm.es      
+% alumno3: sofia.pmiguelez@alumnos.upm.es 
+%% Un poco de limpieza
+clear; clc; close all;
+%% Sistema a ecualizar
+[Z, P, K] = room('mirella.adazo@alumnos.upm.es', 'sofia.pmiguelez@alumnos.upm.es');
+[B, A] = zp2tf(Z, P, K);
+[H, w] = freqz(B, A, 4096);
+mH = 20*log10(abs(H));
+
+plot(w, mH);
+title('Módulo de la respuesta en frecuencia de la sala');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mH)-1, max(mH)+1]);
+
+
+fig('Diagrama de polos y ceros');
+zplane(Z, P)
+%% Calculo del sistema compensador
+Zmin = Z;
+Pmin = P;
+% Calculo los polos y ceros de la componente de fase minima del sistema compensador
+z0 = Z(abs(Z)>1); % extraigo los ceros fuera de circulo unidad, en este caso solo 1
+zrc = 1/conj(z0); 
+Zmin(Zmin == z0) = [];
+Zmin(length(Zmin)+1) = zrc; 
+%tras obtener el reciproco conjugado de z0, elimino z0 del diagrama y añado zrc, haciendo que no haya ningun cer fuera del circulo unidad
+%% calculo de la componente paso todo
+Zap = z0;   %los ceros son los que he eliminado en el Hmin
+Pap = zrc;  %los polos son los reciprocos conjugados
+Kap = (1+z0)/(1+zrc); %|Hap(z)|=1 => Hap(1)=1 de donde se obtiene su ganancia
+Kmin = 1/Kap;
+%% calculo final del sistema compensador
+[Bhc, Ahc] = zp2tf(Pmin, Zmin, Kmin);
+
+[Hc, w] = freqz(Bhc, Ahc, 4096);
+mHc = 20*log10(abs(Hc));
+plot(w, mHc);
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+fig('Diagrama de polos y ceros');
+zplane(Bhc, Ahc);
+
+
+%% diseño de los filtros del compensador
+subplot(2,3,1);
+plot(w, mHc);
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+
+%% -----   peak filter   -----
+[Bp,Ap] = peakfilter(-3,17.5e3, 0.4);
+%[Bp,Ap] = peakfilter(-2,16e3, 0.4);
+[Hp, w] = freqz(Bp, Ap, 4096);
+mHp = 20*log10(abs(Hp));
+subplot(2,3,4);
+plot(w, mHp);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp)-1, max(mHp)+1]);
+
+%% -----   peak filter1   -----
+[Bp1,Ap1] = peakfilter(0.7,8e3, 0.4);
+%[Bp1,Ap1] = peakfilter(0.5,10e3, 0.4);
+[Hp1, w] = freqz(Bp1, Ap1, 4096);
+mHp1 = 20*log10(abs(Hp1));
+subplot(2,3,5);
+plot(w, mHp1);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp1)-1, max(mHp1)+1]);
+
+%% -----   peak filter2   -----
+[Bp2,Ap2] = peakfilter(-1.15,-14e3, 0.4);
+%[Bp2,Ap2] = peakfilter(-0.9,18.5e3, 0.4);
+[Hp2, w] = freqz(Bp2, Ap2, 4096);
+mHp2 = 20*log10(abs(Hp2));
+subplot(2,3,6);
+plot(w, mHp2);
+title('modulo de la respuesta en frecuencia del peak filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp2)-1, max(mHp2)+1]);
+         
+%% -----  low-shelf filter   -----
+[Bls,Als] = lowshelf(-6,4500, 1);
+%[Bls,Als] = lowshelf(-6,4600, 1);
+[Hls, w] = freqz(Bls, Als, 4096);
+mHls = 20*log10(abs(Hls));
+subplot(2,3,2);
+plot(w, mHls);
+title('modulo de la respuesta en frecuencia del low-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHls)-1, max(mHls)+1]);
+
+%% -----   high-shelf filter   -----
+[Bhs,Ahs] = highshelf(33.5, 22900, 0.5);
+%%[Bhs,Ahs] = highshelf(13, 22900, 0.5);
+[Hhs, w] = freqz(Bhs, Ahs, 4096);
+mHhs = 20*log10(abs(Hhs));
+subplot(2,3,3);
+plot(w, mHhs);
+title('modulo de la respuesta en frecuencia del high-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHhs)-1, max(mHhs)+1]);
+
+%% prueba de los filtros en cascada
+%subplot(2,1,1);
+plot(w, mHc-0.5);
+hold on
+plot(w, mHc+0.5);
+
+title('modulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+% sistema compensador 
+% Hct = Hls.*Hhs.*Hp.*Hp1;
+ Hct = Hls.*Hhs.*Hp.*Hp1.*Hp2;
+mHct = 20*log10(abs(Hct));
+%subplot(2,1,2);
+plot(w, mHct);
+title('modulo de la respuesta en frecuencia del compensador real');
+xlabel('\omega'); ylabel('dB'); grid on;
+%axis([0, pi, min(mHct)-1, max(mHct)+1])
+hold off
+
+
+
+
+
+
+
+
