@@ -1,1 +1,163 @@
+% TDS�-G33
+% Laboratorio: Trabajo final
+%
+% alumno1: mirella.adazo@alumnos.upm.es
+% alumno2: luis.lagerqvista@alumnos.upm.es
+% alumno3: sofia.pmiguelez@alumnos.upm.es
+%% Un poco de limpieza
+clear; clc; close all;
+%% Sistema a ecualizar
+[Z, P, K] = room('mirella.adazo@alumnos.upm.es', 'sofia.pmiguelez@alumnos.upm.es');
+[B, A] = zp2tf(Z, P, K);
+[H, w] = freqz(B, A, 4096);
+mH = 20*log10(abs(H));
 
+fig('1')
+plot(w, mH);
+title('Módulo de la respuesta en frecuencia de la sala');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mH)-1, max(mH)+1]);
+
+%Diagrama de polos y ceros
+fig('');
+subplot(2,2,1);
+zplane(Z, P)
+title('D.polos y ceros de la respuesta de la sala');
+%% Calculo del sistema compensador
+Zmin = Z;
+Pmin = P;
+% Calculo los polos y ceros de la componente de fase minima del sistema compensador
+z0 = Z(abs(Z)>1); % extraigo los ceros fuera de circulo unidad, en este caso solo 1
+zrc = 1/conj(z0);
+Zmin(Zmin == z0) = [];
+Zmin(length(Zmin)+1) = zrc;
+%tras obtener el reciproco conjugado de z0, elimino z0 del diagrama y añado zrc, haciendo que no haya ningun cer fuera del circulo unidad
+subplot(2,2,2)
+zplane(Zmin,Pmin);
+title('D.Polos y Ceros Hmin(z)');
+%% calculo de la componente paso todo
+Zap = z0;   %los ceros son los que he eliminado en el Hmin
+Pap = zrc;  %los polos son los reciprocos conjugados
+Kap = (1+z0)/(1+zrc); %|Hap(z)|=1 => Hap(1)=1 de donde se obtiene su ganancia
+Kmin = 1/Kap;
+subplot(2,2,3)
+zplane(Zap,Pap);
+title('D.Polos y Ceros Hap(z)');
+%% calculo final del sistema compensador
+[Bhc, Ahc] = zp2tf(Pmin, Zmin, Kmin);
+[Hc, w] = freqz(Bhc, Ahc, 4096);
+mHc = 20*log10(abs(Hc));
+subplot(2,2,4);
+zplane(Bhc, Ahc);
+title('D.Polos y ceros compensador');
+% xlabel('\omega'); ylabel('dB'); grid on;
+% axis([0, pi, min(mHc)-1, max(mHc)+1]);
+%fig('Diagrama de polos y ceros');
+
+%% diseño de los filtros del compensador
+fig('3')
+subplot(2,3,1);
+plot(w, mHc);
+title('Modulo del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+%% -----   peak filter   -----
+[Bp,Ap] = peakfilter(-0.15,5e3,2);
+[Hp, w] = freqz(Bp, Ap, 4096);
+mHp = 20*log10(abs(Hp));
+subplot(2,3,4);
+plot(w, mHp);
+title('Peak Filter');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp)-1, max(mHp)+1]);
+
+%% -----  peak filter1   -----
+[Bp1,Ap1] = peakfilter(7.6,8e3,1.9);
+%[Bp1,Ap1] = peakfilter(7,8e3,1.9);
+[Hp1, w] = freqz(Bp1, Ap1, 4096);
+mHp1 = 20*log10(abs(Hp1));
+subplot(2,3,5);
+plot(w, mHp1);
+title('Peak filter 1');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp1)-1, max(mHp1)+1]);
+
+%% -----   peak filter2   -----
+[Bp2,Ap2] = peakfilter(-7.2,16e3,2.3);
+[Hp2, w] = freqz(Bp2, Ap2, 4096);
+mHp2 = 20*log10(abs(Hp2));
+subplot(2,3,6);
+plot(w, mHp2);
+title('Peak filter 2');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHp2)-1, max(mHp2)+1]);
+
+%% -----  low-shelf filter   -----
+[Bls,Als] = lowshelf(-6,5e3,0.5);
+[Hls, w] = freqz(Bls, Als, 4096);
+mHls = 20*log10(abs(Hls));
+subplot(2,3,2);
+plot(w, mHls);
+title('Low-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHls)-1, max(mHls)+1]);
+
+%% -----   high-shelf filter   -----
+[Bhs,Ahs] = highshelf(25,20e3,0.5);
+[Hhs, w] = freqz(Bhs, Ahs, 4096);
+mHhs = 20*log10(abs(Hhs));
+subplot(2,3,3);
+plot(w, mHhs);
+title('High-shelf');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHhs)-1, max(mHhs)+1]);
+
+%% prueba de los filtros en cascada
+%subplot(2,1,1);
+%Margen de error posible
+fig('4')
+plot(w, mHc+0.5);
+hold on
+plot(w, mHc-0.5);
+
+title('Módulo de la respuesta en frecuencia del compensador ideal');
+xlabel('\omega'); ylabel('dB'); grid on;
+axis([0, pi, min(mHc)-1, max(mHc)+1]);
+% sistema compensador
+Hct = Hls.*Hhs.*Hp.*Hp1.*Hp2;
+mHct = 20*log10(abs(Hct));
+%subplot(2,1,2);
+plot(w, mHct);
+title('modulo de la respuesta en frecuencia del compensador real');
+xlabel('\omega'); ylabel('dB'); grid on;
+%axis([0, pi, min(mHct)-1, max(mHct)+1])
+hold off
+
+%% Señal de prueba
+fs = 48e3; %Frecuencia de muestreo
+f0 = 20; %Frecuencia inicial
+f1 = 20e3; %Frecuencia final
+t1 = 5; %Tiempo final
+t = 0:1/fs:t1; %vector de tiempos
+x = chirp(t, f0, t1, f1, 'logarithmic');
+%soundsc(x,fs);
+%% Hacemos pasar la señal por la sala 
+x_dist = filter(B,A,x);
+%soundsc(x_dist,fs);
+%% Pasamos la señal por los filtros
+x1=filter(Bls, Als, x_dist); %->Pasobajo->Pasobanda->Pasobanda1->Pasobanda2->Pasoalto
+x2=filter(Bp, Ap, x1);
+x3=filter(Bp1, Ap1, x2);
+x4=filter(Bp2, Ap2, x3);
+x_comp=filter(Bhs, Ahs, x4);
+%soundsc(x_comp,fs);
+fig('6')
+subplot(3,1,1)
+spectrogram(x);
+title('Señal de entrada');
+subplot(3,1,2)
+spectrogram(x_dist);
+title('Señal distorsionada'); 
+subplot (3,1,3)
+spectrogram(x_comp);
+title('Señal de salida');
