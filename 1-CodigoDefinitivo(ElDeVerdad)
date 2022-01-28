@@ -153,11 +153,11 @@ x_comp=filter(Bhs, Ahs, x4);
 %soundsc(x_comp,fs);
 fig('6')
 subplot(3,1,1)
-spectrogram(x);
+semilogx(x);
 title('Señal de entrada');
 subplot(3,1,2)
-spectrogram(x_dist);
+semilogx(x_dist);
 title('Señal distorsionada'); 
 subplot (3,1,3)
-spectrogram(x_comp);
+semilogx(x_comp);
 title('Señal de salida');
