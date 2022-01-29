@@ -12,14 +12,14 @@ clear; clc; close all;
 [H, w] = freqz(B, A, 4096);
 mH = 20*log10(abs(H));
 
-fig('1')
+fig('Módulo de la respuesta en frecuencia de la sala')
 plot(w, mH);
 title('Módulo de la respuesta en frecuencia de la sala');
 xlabel('\omega'); ylabel('dB'); grid on;
 axis([0, pi, min(mH)-1, max(mH)+1]);
 
 %Diagrama de polos y ceros
-fig('');
+fig('Diagramas de polos y ceros');
 subplot(2,2,1);
 zplane(Z, P)
 title('D.polos y ceros de la respuesta de la sala');
@@ -55,7 +55,7 @@ title('D.Polos y ceros compensador');
 %fig('Diagrama de polos y ceros');
 
 %% diseño de los filtros del compensador
-fig('3')
+fig('Diseño de los filtros del compensador')
 subplot(2,3,1);
 plot(w, mHc);
 title('Modulo del compensador ideal');
@@ -115,7 +115,7 @@ axis([0, pi, min(mHhs)-1, max(mHhs)+1]);
 %% prueba de los filtros en cascada
 %subplot(2,1,1);
 %Margen de error posible
-fig('4')
+fig('Prueba de los filtros en cascada')
 plot(w, mHc+0.5);
 hold on
 plot(w, mHc-0.5);
@@ -137,7 +137,7 @@ hold off
 fs = 48e3; %Frecuencia de muestreo
 f0 = 20; %Frecuencia inicial
 f1 = 20e3; %Frecuencia final
-t1 = 5; %Tiempo final
+t1 = 10; %Tiempo final
 t = 0:1/fs:t1; %vector de tiempos
 x = chirp(t, f0, t1, f1, 'logarithmic');
 %soundsc(x,fs);
@@ -151,7 +151,7 @@ x3=filter(Bp1, Ap1, x2);
 x4=filter(Bp2, Ap2, x3);
 x_comp=filter(Bhs, Ahs, x4);
 %soundsc(x_comp,fs);
-fig('6')
+fig('Comprobación')
 subplot(3,1,1)
 semilogx(x);
 title('Señal de entrada');
